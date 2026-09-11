@@ -179,6 +179,13 @@
       add(aviso, mostrar); add(host, aviso);
     }
     $('resets').textContent = data.resets == null ? '—' : data.resets;
+    // Com mais de uma conta, o total sozinho não diz de quem são os resets.
+    var porConta = [];
+    for (var q = 0; q < data.buckets.length; q++) {
+      var conta = data.buckets[q];
+      if (conta.resets != null && conta.account) porConta.push(conta.account.split('@')[0] + ' ' + conta.resets);
+    }
+    if ($('resets-detail')) $('resets-detail').textContent = porConta.length > 1 ? porConta.join(' · ') : '';
     $('credits').textContent = credits && credits.unlimited ? 'Ilimitado' : credits && credits.balance != null ? credits.balance : '—';
     resizePanel();
   }

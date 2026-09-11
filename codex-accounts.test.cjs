@@ -9,6 +9,7 @@ test('contas somam resets e recebem ids distintos',()=>{
   assert.deepEqual(r.buckets.map(b=>b.id),['codex','codex@.codex-conta-1']);
   assert.deepEqual(r.buckets.map(b=>b.name),['um@x.com','dois@x.com']);
   assert.equal(r.resets,3);
+  assert.deepEqual(r.buckets.map(b=>b.resets),[2,1]);
 });
 test('conta com falha não derruba as outras',()=>{
   const r=mergeAccounts([

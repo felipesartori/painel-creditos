@@ -101,6 +101,8 @@ function mergeAccounts(results) {
       buckets.push({...bucket,
         id:primary?bucket.id:bucket.id+'@'+path.basename(home),
         account:label,
+        // Os resets são da conta, não do limite: só o bucket principal dela os carrega.
+        resets:bucket.id==='codex'?value.resets??null:null,
         name:results.length>1?label:bucket.name});
     }
   });

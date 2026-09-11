@@ -44,7 +44,7 @@ No Safari do iPhone, use Compartilhar → Adicionar à Tela de Início e abra o 
 
 No Windows, para encerrar, confira o PID de `.local/server.pid` e pare esse processo Node no Gerenciador de Tarefas. O setup tenta configurar a inicialização ao entrar no Windows; confira a mensagem de sucesso. Para desativá-la, desabilite a tarefa `PainelCreditos` no Agendador de Tarefas. Para uso via terminal: `npm start`. Validação: `npm test`.
 
-Contas Codex: o servidor consulta todas as pastas `~/.codex*` que tenham `auth.json`, uma por conta, e mostra um cartão por conta identificado pelo e-mail do login. Para fixar a lista, defina `CODEX_HOMES` com os caminhos separados por vírgula. Uma conta sem login não impede a leitura das demais; os créditos de reset exibidos são a soma das contas.
+Contas Codex: o servidor consulta todas as pastas `~/.codex*` que tenham `auth.json`, uma por conta, e mostra um cartão por conta identificado pelo e-mail do login. Para fixar a lista, defina `CODEX_HOMES` com os caminhos separados por vírgula. Uma conta sem login não impede a leitura das demais. O total de resets disponíveis no rodapé é a soma das contas, com a divisão por conta logo abaixo quando há mais de uma.
 
 Cursor: consulta de leitura a `https://cursor.com/api/usage-summary` a cada dois minutos, com o token de sessão do `cursor-agent` (variável `CURSOR_ACCESS_TOKEN`, arquivo em `CURSOR_TOKEN_FILE` ou, no macOS, o item `cursor-access-token` do Keychain) e o `authId` de `~/.cursor/cli-config.json`. Mostra o consumo do ciclo mensal e dos créditos avulsos. Para renovar uma sessão expirada, faça login novamente com o `cursor-agent` no computador.
 
