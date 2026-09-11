@@ -143,7 +143,8 @@ function start() {
   }
   function pollClaude(){return Promise.all(providers.map(pollProvider));}
   async function poll(){if(busy)return;busy=true;try{state={updatedAt:Date.now(),data:await readAllAccounts(),error:null};}catch(e){state={...state,error:e.message};}finally{busy=false;}}
-  const files={'/':['index.html','text/html; charset=utf-8'],'/boot.js':['boot.js','text/javascript; charset=utf-8'],'/app-v4.js':['app-v4.js','text/javascript; charset=utf-8'],'/app.js':['app-v4.js','text/javascript; charset=utf-8'],'/style.css':['style.css','text/css; charset=utf-8'],'/landscape.css':['landscape.css','text/css; charset=utf-8']};
+  const files={'/':['index.html','text/html; charset=utf-8'],'/boot.js':['boot.js','text/javascript; charset=utf-8'],'/app-v4.js':['app-v4.js','text/javascript; charset=utf-8'],'/app.js':['app-v4.js','text/javascript; charset=utf-8'],'/style.css':['style.css','text/css; charset=utf-8'],'/landscape.css':['landscape.css','text/css; charset=utf-8'],
+    '/icons/codex.svg':['icons/codex.svg','image/svg+xml'],'/icons/claude.svg':['icons/claude.svg','image/svg+xml'],'/icons/cursor.svg':['icons/cursor.svg','image/svg+xml']};
   const server=http.createServer((req,res)=>{
     res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');
     res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'");

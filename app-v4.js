@@ -93,8 +93,8 @@
   function windowName(w) { return w.label || (w.minutes === 10080 ? 'Limite semanal' : w.minutes === 300 ? 'Janela de 5 horas' : w.minutes ? 'Janela de ' + w.minutes + ' minutos' : 'Limite da conta'); }
   // Provedores HTTP extras (Claude, Cursor): mesmo formato de bucket, cada um com seu estado de leitura.
   var PROVIDERS = [
-    {key:'claude', mark:'✳', metric:'used', fallback:{id:'claude',name:'Claude',windows:[{minutes:300,remaining:null,used:null},{minutes:10080,remaining:null,used:null}]}, loading:'Consultando limites Claude…', maxWindows:2},
-    {key:'cursor', mark:'▸', optional:true, fallback:{id:'cursor',name:'Cursor',windows:[{label:'Ciclo mensal',remaining:null,used:null}]}, loading:'Consultando limites Cursor…', maxWindows:2}
+    {key:'claude', mark:'/icons/claude.svg', metric:'used', fallback:{id:'claude',name:'Claude',windows:[{minutes:300,remaining:null,used:null},{minutes:10080,remaining:null,used:null}]}, loading:'Consultando limites Claude…', maxWindows:2},
+    {key:'cursor', mark:'/icons/cursor.svg', optional:true, fallback:{id:'cursor',name:'Cursor',windows:[{label:'Ciclo mensal',remaining:null,used:null}]}, loading:'Consultando limites Cursor…', maxWindows:2}
   ];
   function render(data, states) {
     var host = $('buckets'), credits = null;
@@ -128,7 +128,9 @@
       if (bucket.id === 'codex') credits = bucket.credits;
       var head = el('div', 'provider');
       var tag = isExtra ? (extraStale ? 'Aguardando' : time(extra.state.updatedAt)) : bucket.plan ? 'Plano ' + bucket.plan : 'Codex';
-      add(head, el('span', 'provider-mark', isExtra?extra.provider.mark:'⌘'), el('h2', '', bucket.name), el('span', 'tag', tag));
+      var mark = el('span', 'provider-mark'), icon = el('img');
+      icon.src = isExtra ? extra.provider.mark : '/icons/codex.svg'; icon.alt = ''; add(mark, icon);
+      add(head, mark, el('h2', '', bucket.name), el('span', 'tag', tag));
       var hide = el('button', 'hide-card', '×');
       hide.type = 'button'; hide.title = 'Ocultar até a renovação'; hide.setAttribute('aria-label', 'Ocultar ' + bucket.name + ' até a renovação');
       (function (target) { hide.addEventListener('click', function () { hideBucket(target); }); }(bucket));

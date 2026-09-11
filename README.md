@@ -52,4 +52,6 @@ Cada cartão tem um `×` que o oculta até o horário de renovação daquela con
 
 No Codex e no Cursor o número grande é o saldo que resta, caindo até 0. No Claude é o consumo, subindo até 100%, para bater com o que o `claude` mostra no terminal; nos dois casos a outra leitura aparece na linha de baixo. Nas barras, a cor indica a faixa do que resta (verde, âmbar abaixo de 25% e vermelho abaixo de 10%) e o traço vertical marca o andamento do período: barra à frente do traço significa folga em relação ao reset, atrás dele significa gasto adiantado.
 
+Os ícones de cada serviço estão em `icons/`, vindos do projeto Simple Icons (repositório em CC0), e são servidos pelo próprio painel.
+
 Limites da assinatura, créditos extras e resets são informações distintas. Valores não informados aparecem como indisponíveis, nunca como zero. O protocolo do app-server é experimental e pode requerer ajustes após atualizações do Codex.
