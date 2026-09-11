@@ -6,6 +6,25 @@
   var token = accessPath ? accessPath[1] : location.hash.slice(1), snapshot = null, networkError = false;
   var inFlight = false, lastRender = '', desk = false, wakeLock = null;
   var browserProfile = null;
+  // Contas ocultas ficam só neste aparelho: id do cartão -> instante (em segundos) em que volta sozinho.
+  var hidden = {};
+  function loadHidden() {
+    try { hidden = JSON.parse(localStorage.getItem('reserva-ocultas') || '{}') || {}; } catch (ignore) { hidden = {}; }
+  }
+  function saveHidden() { try { localStorage.setItem('reserva-ocultas', JSON.stringify(hidden)); } catch (ignore) {} }
+  function dropExpired() {
+    var now = Date.now() / 1000, changed = false;
+    for (var id in hidden) if (hidden.hasOwnProperty(id) && !(hidden[id] > now)) { delete hidden[id]; changed = true; }
+    if (changed) saveHidden();
+    return changed;
+  }
+  function hideBucket(bucket) {
+    var until = 0;
+    for (var i = 0; i < bucket.windows.length; i++) if (bucket.windows[i].resetsAt > until) until = bucket.windows[i].resetsAt;
+    hidden[bucket.id] = until || Math.floor(Date.now() / 1000) + 86400;
+    saveHidden(); lastRender = ''; refresh();
+  }
+  function countHidden() { var n = 0; for (var id in hidden) if (hidden.hasOwnProperty(id)) n++; return n; }
   try { token = token || sessionStorage.getItem('reserva-token') || ''; if (token) sessionStorage.setItem('reserva-token', token); } catch (ignore) {}
   // Home Screen shortcuts use the access path; old fragment links still work.
   function detectBrowser() {
@@ -64,6 +83,13 @@
     var d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
     return (d ? d + 'd ' : '') + h + 'h ' + m + 'min';
   }
+  // Quanto do período da janela já passou, para comparar com o consumo.
+  function elapsedPercent(w) {
+    if (!w.resetsAt || !w.minutes) return null;
+    var total = w.minutes * 60, passed = total - (w.resetsAt - Date.now() / 1000);
+    return Math.max(0, Math.min(100, passed / total * 100));
+  }
+  function barColor(remaining) { return remaining == null ? '#8ea3c4' : remaining <= 10 ? '#ff9a9d' : remaining <= 25 ? '#f8cd7e' : '#82d8c9'; }
   function windowName(w) { return w.label || (w.minutes === 10080 ? 'Limite semanal' : w.minutes === 300 ? 'Janela de 5 horas' : w.minutes ? 'Janela de ' + w.minutes + ' minutos' : 'Limite da conta'); }
   // Provedores HTTP extras (Claude, Cursor): mesmo formato de bucket, cada um com seu estado de leitura.
   var PROVIDERS = [
@@ -89,6 +115,10 @@
     var sparkText = [];
     if(spark) for(var s=0;s<spark.windows.length;s++) sparkText.push((spark.windows[s].minutes===300?'5h: ':'Semana: ')+(spark.windows[s].remaining==null?'—':spark.windows[s].remaining+'%'));
     if($('spark-summary')) $('spark-summary').textContent = sparkText.length?sparkText.join(' · '):'Limites indisponíveis';
+    dropExpired();
+    var visibleBuckets = [];
+    for (var v = 0; v < displayBuckets.length; v++) if (!hidden[displayBuckets[v].id]) visibleBuckets.push(displayBuckets[v]);
+    displayBuckets = visibleBuckets;
     while (host.firstChild) host.removeChild(host.firstChild);
     if (!data.buckets.length) add(host, el('p', 'notice', 'Limites Codex indisponíveis nesta leitura.'));
     for (var b = 0; b < displayBuckets.length; b++) {
@@ -98,7 +128,11 @@
       if (bucket.id === 'codex') credits = bucket.credits;
       var head = el('div', 'provider');
       var tag = isExtra ? (extraStale ? 'Aguardando' : time(extra.state.updatedAt)) : bucket.plan ? 'Plano ' + bucket.plan : 'Codex';
-      add(head, el('span', 'provider-mark', isExtra?extra.provider.mark:'⌘'), el('h2', '', bucket.name), el('span', 'tag', tag)); add(card, head);
+      add(head, el('span', 'provider-mark', isExtra?extra.provider.mark:'⌘'), el('h2', '', bucket.name), el('span', 'tag', tag));
+      var hide = el('button', 'hide-card', '×');
+      hide.type = 'button'; hide.title = 'Ocultar até a renovação'; hide.setAttribute('aria-label', 'Ocultar ' + bucket.name + ' até a renovação');
+      (function (target) { hide.addEventListener('click', function () { hideBucket(target); }); }(bucket));
+      add(head, hide); add(card, head);
       if(extraStale){var note=el('p','provider-note',(extra.state&&extra.state.error)||extra.provider.loading);add(card,note);}
       if (bucket.blocked) add(card, el('p', 'notice', 'Limite atingido. Confira a conta no Codex.'));
       var windows = el('div', 'windows');
@@ -110,19 +144,33 @@
         add(big, el('span', '', '%')); add(reading, big, el('span', 'available', 'disponível')); add(section, reading);
         var bar = el('div', 'segments'); bar.setAttribute('role', 'meter'); bar.setAttribute('aria-label', windowName(w) + ' disponível'); bar.setAttribute('aria-valuemin', '0'); bar.setAttribute('aria-valuemax', '100');
         if (w.remaining != null) bar.setAttribute('aria-valuenow', w.remaining);
+        var color = barColor(w.remaining);
         for (var k = 0; k < 25; k++) {
           var segment = el('span', 'segment'), fill = el('i');
           fill.style.width = Math.max(0, Math.min(100, ((w.remaining || 0) - k * 4) * 25)) + '%';
-          if (w.remaining != null && w.remaining <= 10) fill.style.background = '#ff9a9d'; else if (w.remaining != null && w.remaining <= 25) fill.style.background = '#f8cd7e';
+          fill.style.background = color;
           add(segment, fill); add(bar, segment);
         }
+        // Marca de quanto do período já passou: à esquerda do consumo significa gasto adiantado.
+        var elapsed = elapsedPercent(w);
+        if (elapsed != null) { var mark = el('span', 'elapsed-mark'); mark.style.left = elapsed + '%'; mark.title = Math.round(elapsed) + '% do tempo decorrido'; add(bar, mark); }
         add(section, bar);
-        var meta = el('div', 'meter-meta'); add(meta, el('span', '', w.used == null ? 'Uso indisponível' : w.used + '% utilizado'), el('span', '', w.resetsAt ? 'Renova ' + dateTime(w.resetsAt) : 'Renovação indisponível')); add(section, meta);
+        var usedText = w.used == null ? 'Uso indisponível' : Math.round(w.used) + '% utilizado';
+        if (elapsed != null) usedText += ' · ' + Math.round(elapsed) + '% do tempo';
+        var meta = el('div', 'meter-meta'); add(meta, el('span', '', usedText), el('span', '', w.resetsAt ? 'Renova ' + dateTime(w.resetsAt) : 'Renovação indisponível')); add(section, meta);
         var reset = el('div', 'reset-line'), count = el('strong', '', countdown(w.resetsAt));
         if (w.resetsAt) count.setAttribute('data-reset', w.resetsAt);
         add(reset, el('span', '', 'Tempo até renovar'), count); add(section, reset); add(windows, section);
       }
       add(card, windows); add(host, card);
+    }
+    var ocultas = countHidden();
+    if (ocultas) {
+      var aviso = el('p', 'hidden-note', ocultas === 1 ? '1 conta oculta até renovar.' : ocultas + ' contas ocultas até renovar.');
+      var mostrar = el('button', 'show-hidden', 'Mostrar todas');
+      mostrar.type = 'button';
+      mostrar.addEventListener('click', function () { hidden = {}; saveHidden(); lastRender = ''; refresh(); });
+      add(aviso, mostrar); add(host, aviso);
     }
     $('resets').textContent = data.resets == null ? '—' : data.resets;
     $('credits').textContent = credits && credits.unlimited ? 'Ilimitado' : credits && credits.balance != null ? credits.balance : '—';
@@ -182,8 +230,10 @@
     $('date').textContent = pad(now.getDate()) + '/' + pad(now.getMonth() + 1);
     var counts = document.querySelectorAll('[data-reset]');
     for (var i = 0; i < counts.length; i++) counts[i].textContent = countdown(Number(counts[i].getAttribute('data-reset')));
+    if (dropExpired()) { lastRender = ''; refresh(); }
     updateStatus();
   }
+  loadHidden();
   applyBrowserProfile(detectBrowser());
   // Start data loading before optional fullscreen controls.
   tick(); refresh(); resizePanel(); window.reservaStarted = true;

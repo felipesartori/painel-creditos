@@ -48,4 +48,8 @@ Contas Codex: o servidor consulta todas as pastas `~/.codex*` que tenham `auth.j
 
 Cursor: consulta de leitura a `https://cursor.com/api/usage-summary` a cada dois minutos, com o token de sessão do `cursor-agent` (variável `CURSOR_ACCESS_TOKEN`, arquivo em `CURSOR_TOKEN_FILE` ou, no macOS, o item `cursor-access-token` do Keychain) e o `authId` de `~/.cursor/cli-config.json`. Mostra o consumo do ciclo mensal e dos créditos avulsos. Para renovar uma sessão expirada, faça login novamente com o `cursor-agent` no computador.
 
+Cada cartão tem um `×` que o oculta até o horário de renovação daquela conta, e depois disso ele volta sozinho. A escolha fica salva no próprio aparelho, então cada celular ou computador vê o que quiser; o botão "Mostrar todas" traz de volta antes da renovação.
+
+Nas barras, a cor indica a faixa do que resta (verde, âmbar abaixo de 25% e vermelho abaixo de 10%) e o traço vertical marca quanto do período da janela já passou: consumo à direita do traço significa gasto adiantado em relação ao reset.
+
 Limites da assinatura, créditos extras e resets são informações distintas. Valores não informados aparecem como indisponíveis, nunca como zero. O protocolo do app-server é experimental e pode requerer ajustes após atualizações do Codex.

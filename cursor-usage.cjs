@@ -6,15 +6,18 @@ const {execFileSync}=require('node:child_process');
 function normalizeCursor(raw,account){
   const percent=v=>Number.isFinite(v)?Math.max(0,Math.min(100,Math.round(v*10)/10)):null;
   const resetsAt=raw.billingCycleEnd?Math.floor(Date.parse(raw.billingCycleEnd)/1000):null;
+  const inicio=raw.billingCycleStart?Math.floor(Date.parse(raw.billingCycleStart)/1000):null;
+  // Duração do ciclo em minutos, para o painel marcar quanto do período já passou.
+  const minutes=Number.isFinite(resetsAt)&&Number.isFinite(inicio)?Math.round((resetsAt-inicio)/60):null;
   const usage=raw.individualUsage||{};
   const windows=[];
   if(usage.plan){
     const used=raw.isUnlimited?0:percent(usage.plan.totalPercentUsed);
-    windows.push({key:'plan',label:'Ciclo mensal',used,remaining:used===null?null:Math.round((100-used)*10)/10,minutes:null,resetsAt:Number.isFinite(resetsAt)?resetsAt:null});
+    windows.push({key:'plan',label:'Ciclo mensal',used,remaining:used===null?null:Math.round((100-used)*10)/10,minutes,resetsAt:Number.isFinite(resetsAt)?resetsAt:null});
   }
   if(usage.onDemand?.enabled&&Number.isFinite(usage.onDemand.limit)&&usage.onDemand.limit>0){
     const used=percent(usage.onDemand.used/usage.onDemand.limit*100);
-    windows.push({key:'ondemand',label:'Créditos avulsos',used,remaining:used===null?null:Math.round((100-used)*10)/10,minutes:null,resetsAt:Number.isFinite(resetsAt)?resetsAt:null});
+    windows.push({key:'ondemand',label:'Créditos avulsos',used,remaining:used===null?null:Math.round((100-used)*10)/10,minutes,resetsAt:Number.isFinite(resetsAt)?resetsAt:null});
   }
   return {id:'cursor',name:account||'Cursor',plan:raw.membershipType||null,windows};
 }
