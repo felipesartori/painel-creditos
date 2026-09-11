@@ -6,7 +6,7 @@ const crypto = require('node:crypto');
 const { spawn } = require('node:child_process');
 const {readClaude}=require('./claude-usage.cjs');
 const ROOT = __dirname;
-const defaultClientName = process.env.CODEX_CLIENT_NAME || `codex_usage_monitor_${(process.env.USERNAME || 'user').replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+const defaultClientName = process.env.CODEX_CLIENT_NAME || `codex_usage_monitor_${(process.env.USERNAME || process.env.USER || 'user').replace(/[^a-zA-Z0-9_-]/g, '_')}`;
 
 function normalize(raw) {
   const map = raw.rateLimitsByLimitId;
@@ -26,12 +26,37 @@ function normalize(raw) {
   };
 }
 
-function readLimits() {
+// Cada conta Codex é um CODEX_HOME separado. Sem CODEX_HOMES definido, descobre ~/.codex* com auth.json.
+function listCodexHomes() {
+  const userHome = process.env.USERPROFILE || os.homedir();
+  const configured = (process.env.CODEX_HOMES || process.env.CODEX_HOME || '').split(/[,:]/).map(x=>x.trim()).filter(Boolean);
+  if (configured.length) return configured;
+  const main = path.join(userHome,'.codex');
+  let entries=[];
+  try{entries=fs.readdirSync(userHome);}catch{}
+  const found = entries.filter(name=>/^\.codex/.test(name))
+    .map(name=>path.join(userHome,name))
+    .filter(dir=>fs.existsSync(path.join(dir,'auth.json')))
+    .sort((a,b)=>(a===main?-1:0)-(b===main?-1:0)||a.localeCompare(b));
+  return found.length ? found : [main];
+}
+
+// Nome amigável da conta: e-mail do id_token quando existir, senão o nome do diretório.
+function accountLabel(home) {
+  try {
+    const token = JSON.parse(fs.readFileSync(path.join(home,'auth.json'),'utf8')).tokens?.id_token;
+    const payload = JSON.parse(Buffer.from(token.split('.')[1],'base64url').toString('utf8'));
+    if (payload.email) return payload.email;
+  } catch {}
+  return path.basename(home);
+}
+
+function readLimits(codexHome) {
   return new Promise((resolve,reject) => {
     const userHome = process.env.USERPROFILE || os.homedir();
     const child = spawn(process.env.CODEX_BINARY || 'codex', ['app-server','--stdio'], {
       windowsHide:true, cwd:ROOT,
-      env:{...process.env,HOME:userHome,CODEX_HOME:process.env.CODEX_HOME || path.join(userHome,'.codex')}
+      env:{...process.env,HOME:userHome,CODEX_HOME:codexHome || process.env.CODEX_HOME || path.join(userHome,'.codex')}
     });
     let buffer='',finished=false;
     const finish=(error,result)=>{if(finished)return;finished=true;clearTimeout(timer);child.kill();error?reject(error):resolve(result);};
@@ -63,6 +88,35 @@ function readLimits() {
   });
 }
 
+// Junta as contas em uma lista só de buckets, prefixando ids para não colidir entre contas.
+function mergeAccounts(results) {
+  const buckets=[], errors=[];
+  let resets=null;
+  results.forEach(({home,label,value,error},index)=>{
+    if(error){errors.push(label+': '+error);return;}
+    if(Number.isFinite(value.resets))resets=(resets||0)+value.resets;
+    for(const bucket of value.buckets){
+      const primary=index===0&&bucket.id==='codex';
+      buckets.push({...bucket,
+        id:primary?bucket.id:bucket.id+'@'+path.basename(home),
+        account:label,
+        name:results.length>1?label:bucket.name});
+    }
+  });
+  if(!buckets.length&&errors.length)throw new Error(errors.join(' · '));
+  return {buckets,resets,errors};
+}
+
+async function readAllAccounts() {
+  const homes=listCodexHomes();
+  const results=await Promise.all(homes.map(async home=>{
+    const label=accountLabel(home);
+    try{return {home,label,value:await readLimits(home)};}
+    catch(error){return {home,label,error:error.message};}
+  }));
+  return mergeAccounts(results);
+}
+
 function start() {
   const local=path.join(ROOT,'.local');fs.mkdirSync(local,{recursive:true});
   const tokenFile=path.join(local,'access-token');
@@ -80,7 +134,7 @@ function start() {
     catch(error){claudeState={...claudeState,error:error.message==='fetch failed'?'Sem conexão com o Claude. Tentando novamente em alguns minutos.':error.message};claudeNextAttempt=Date.now()+(error.retryAfterSeconds||120)*1000;}
     finally{claudeBusy=false;}
   }
-  async function poll(){if(busy)return;busy=true;try{state={updatedAt:Date.now(),data:await readLimits(),error:null};state.updatedAt=Date.now();}catch(e){state={...state,error:e.message};}finally{busy=false;}}
+  async function poll(){if(busy)return;busy=true;try{state={updatedAt:Date.now(),data:await readAllAccounts(),error:null};}catch(e){state={...state,error:e.message};}finally{busy=false;}}
   const files={'/':['index.html','text/html; charset=utf-8'],'/boot.js':['boot.js','text/javascript; charset=utf-8'],'/app-v4.js':['app-v4.js','text/javascript; charset=utf-8'],'/app.js':['app-v4.js','text/javascript; charset=utf-8'],'/style.css':['style.css','text/css; charset=utf-8'],'/landscape.css':['landscape.css','text/css; charset=utf-8']};
   const server=http.createServer((req,res)=>{
     res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');
@@ -124,5 +178,5 @@ function start() {
   for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{clearInterval(interval);clearInterval(claudeInterval);server.close();process.exit();});
   return server;
 }
-module.exports={normalize,readLimits};
+module.exports={normalize,readLimits,readAllAccounts,listCodexHomes,accountLabel,mergeAccounts};
 if(require.main===module)start();
