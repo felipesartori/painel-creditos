@@ -107,7 +107,8 @@
     for (var p = 0; p < PROVIDERS.length; p++) {
       var provider = PROVIDERS[p], pState = states && states[provider.key];
       if (provider.optional && !pState) continue;
-      var stale = !pState || !pState.updatedAt || !!pState.error || Date.now() - pState.updatedAt > 300000;
+      var limite = ((pState && pState.pollEverySeconds) || 300) * 2000;
+      var stale = !pState || !pState.updatedAt || !!pState.error || Date.now() - pState.updatedAt > limite;
       var bucket = (pState && pState.data) || provider.fallback;
       extras[bucket.id] = {provider:provider, state:pState, stale:stale};
       displayBuckets.push(bucket);

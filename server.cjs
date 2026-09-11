@@ -120,7 +120,11 @@ async function readAllAccounts() {
   return mergeAccounts(results);
 }
 
+const PROVIDER_INTERVAL_SECONDS=Number(process.env.PROVIDER_INTERVAL_SECONDS||300);
+const IDLE_PAUSE_MS=Number(process.env.IDLE_PAUSE_MINUTES||10)*60000;
+
 function start() {
+  let lastClientSeen=Date.now();
   const local=path.join(ROOT,'.local');fs.mkdirSync(local,{recursive:true});
   const tokenFile=path.join(local,'access-token');
   const token=fs.existsSync(tokenFile)?fs.readFileSync(tokenFile,'utf8').trim():crypto.randomBytes(24).toString('hex');
@@ -134,11 +138,24 @@ function start() {
   const providers=[
     {key:'claude',read:readClaude,offline:'Sem conexão com o Claude. Tentando novamente em alguns minutos.'},
     {key:'cursor',read:readCursor,offline:'Sem conexão com o Cursor. Tentando novamente em alguns minutos.',optional:true}
-  ].map(p=>({...p,state:{updatedAt:null,data:null,error:null},busy:false,nextAttempt:0}));
+  ].map(p=>({...p,everySeconds:PROVIDER_INTERVAL_SECONDS,state:{updatedAt:null,data:null,error:null},busy:false,nextAttempt:0,backoff:0}));
   async function pollProvider(provider){
-    if(provider.busy||Date.now()<provider.nextAttempt)return;provider.busy=true;
-    try{const data=await provider.read();provider.state={updatedAt:Date.now(),data,error:null};provider.nextAttempt=Date.now()+120000;}
-    catch(error){provider.missing=Boolean(error.missingCredentials);provider.state={...provider.state,error:error.message==='fetch failed'?provider.offline:error.message};provider.nextAttempt=Date.now()+(error.retryAfterSeconds||120)*1000;}
+    if(provider.busy||Date.now()<provider.nextAttempt)return;
+    // Sem ninguém com o painel aberto, não há motivo para continuar consultando os serviços.
+    if(provider.state.updatedAt&&Date.now()-lastClientSeen>IDLE_PAUSE_MS)return;
+    provider.busy=true;
+    try{
+      const data=await provider.read();
+      provider.state={updatedAt:Date.now(),data,error:null};provider.backoff=0;
+      provider.nextAttempt=Date.now()+provider.everySeconds*1000;
+    }
+    catch(error){
+      provider.missing=Boolean(error.missingCredentials);
+      provider.state={...provider.state,error:error.message==='fetch failed'?provider.offline:error.message};
+      // Cada recusa seguida dobra a espera, até meia hora, para não insistir com o serviço.
+      provider.backoff=Math.min(provider.backoff?provider.backoff*2:provider.everySeconds,1800);
+      provider.nextAttempt=Date.now()+Math.max(error.retryAfterSeconds||0,provider.backoff)*1000;
+    }
     finally{provider.busy=false;}
   }
   function pollClaude(){return Promise.all(providers.map(pollProvider));}
@@ -165,11 +182,12 @@ function start() {
     if(req.method!=='GET'){res.writeHead(405,{'Content-Type':'text/plain; charset=utf-8'});res.end('Método não permitido');return;}
     if(url.pathname==='/painel'||url.pathname==='/painel/'){accessPage();return;}
     if(url.pathname==='/api/usage'){
+      lastClientSeen=Date.now();
       const supplied=Buffer.from(req.headers.authorization||'');const expected=Buffer.from('Bearer '+token);
       if(supplied.length!==expected.length||!crypto.timingSafeEqual(supplied,expected)){res.writeHead(401);res.end();return;}
       res.writeHead(200,{'Content-Type':'application/json; charset=utf-8'});const extra={};
       // Provedor opcional sem credencial no computador fica fora do painel, em vez de virar um cartão em erro.
-      for(const provider of providers)if(!(provider.optional&&provider.missing&&!provider.state.data))extra[provider.key]={...provider.state,pollEverySeconds:120};
+      for(const provider of providers)if(!(provider.optional&&provider.missing&&!provider.state.data))extra[provider.key]={...provider.state,pollEverySeconds:provider.everySeconds};
       res.end(JSON.stringify({...state,pollEverySeconds:60,...extra}));return;
     }
     const accessPath=/^\/painel\/([a-f0-9]{48})\/?$/.exec(url.pathname);
