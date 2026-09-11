@@ -1,0 +1,119 @@
+/* Compact desk display. Final Flexbox rules support Safari 10 / iOS 10.2. */
+.claude-meter .provider-mark{color:#d6b49e}.claude-meter .segment i{background:#d6b49e}.provider-stale .big{color:#a6b6cd}.provider-note{color:#f8cd7e;font-size:11px;line-height:1.3}.spark-summary .provider{justify-content:space-between}.spark-summary h2{margin-right:10px}#spark-summary{font-size:11px;color:#a6b6cd}
+html,body{background:#111c2e;color:#f3f6ff;margin:0;min-height:100%;-webkit-text-size-adjust:100%}
+body{min-height:100vh}
+[hidden]{display:none!important}
+header .clock{margin-left:auto;margin-right:14px}
+#fullscreen-help{position:fixed;z-index:10;bottom:10px;left:10px;right:10px;padding:16px;background:#19283e;border:1px solid #a7b7ff;border-radius:12px;font-size:13px;line-height:1.4;box-shadow:0 0 0 200vmax rgba(0,0,0,.7)}
+#fullscreen-help p{margin:8px 0}#close-help{float:right;margin-left:12px}
+.segments{gap:0}.segment+.segment{margin-left:4px}
+.compact .segment+.segment{margin-left:2px}
+@media(orientation:landscape) and (max-height:500px) and (max-width:1000px){
+  main,.desk main{padding:6px 10px;max-width:none;height:var(--screen-height,100vh);min-height:230px;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:24px 22px minmax(0,1fr) 30px;grid-row-gap:5px}
+  header,.desk header{padding:0;min-width:0}
+  .brand{font-size:17px}.brand-icon{font-size:21px;margin-right:7px}.brand{gap:0}.subtitle,.clock>span:last-child{display:none}
+  .clock>span:first-child{font-size:17px}.clock{margin-left:auto}
+  .intro,.desk .intro,footer{display:none}
+  .status-line{margin:0;font-size:10px;min-width:0}
+  #refresh{padding:0 5px;min-height:22px;font-size:10px}
+  #buckets{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr);grid-gap:8px;min-height:0}
+  .meter{padding:9px 12px;border-radius:12px;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:visible}
+  .provider{gap:0;min-width:0}.provider-mark{font-size:17px;margin-right:6px}.provider h2{font-size:15px}.compact .provider h2{font-size:12px;line-height:1.2}
+  .tag{font-size:8px;padding:4px 6px;margin-left:auto}.compact .tag{display:none}
+  .windows,.compact .windows{display:grid;grid-template-columns:minmax(0,1fr);grid-gap:8px;flex:1;min-height:0}
+  .compact .windows{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .window,.compact .window{padding-top:4px;min-width:0;display:flex;flex-direction:column;justify-content:center}
+  .window+.window,.compact .window+.window{border:0;border-left:1px solid var(--line);padding-left:8px}
+  .window-title,.compact .window-title{font-size:10px}
+  .reading{display:flex;gap:0;align-items:baseline;flex:1}
+  .big,.desk .big{font-size:25vh;line-height:1;letter-spacing:-4px;margin:auto 0}
+  .big span{font-size:25px}.available{font-size:10px;margin-left:8px}
+  .compact .reading{display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
+  .compact .big,.desk .compact .big{font-size:14vh;letter-spacing:-2px;margin:0}.compact .big span{font-size:18px;margin-left:2px}
+  .compact .available{font-size:9px;margin:2px 0}
+  .segments,.compact .segments{height:9px;min-height:9px;margin:4px 0 6px}.compact .segments{height:5px;min-height:5px}
+  .segment+.segment{margin-left:3px}.compact .segment+.segment{margin-left:1px}
+  .meter-meta,.compact .meter-meta{font-size:9px;line-height:1.2;gap:0}
+  .meter-meta>span:first-child{display:none}.compact .meter-meta{min-height:22px}
+  .reset-line,.compact .reset-line{display:flex;justify-content:space-between;font-size:10px;margin-top:5px;padding-top:5px;gap:0;line-height:1.2}
+  .reset-line>span{font-size:0}.reset-line>span:after{content:'Renova em';font-size:9px}
+  .compact .reset-line{display:block}.compact .reset-line>span{display:none}.compact .reset-line strong{font-size:10px;white-space:nowrap}
+  .bottom-grid{margin:0;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);grid-gap:8px;min-height:0}
+  .extras{padding:3px 10px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:0}
+  .extras>div{display:flex;align-items:center}.extras .eyebrow{font-size:8px;letter-spacing:0;margin:0 7px 0 0}.extra-number{font-size:18px;line-height:1}
+  .extras p:last-child,.claude>p,.claude>.muted{display:none}
+  .claude{padding:2px 10px;border-radius:8px}.claude .provider{height:100%}.claude-mark{font-size:19px;margin-right:6px}.claude .provider h2{font-size:12px}.claude .tag{font-size:8px;padding:3px 5px}
+  #exit-desk{font-size:9px;padding:2px 7px;min-height:24px;margin-left:12px}
+  #desk{font-size:9px;padding:2px 8px;min-height:24px}
+  .has-notice main{height:auto;min-height:var(--screen-height,100vh);grid-template-rows:24px 22px auto minmax(145px,1fr) 30px}
+  .notice{margin:0;padding:5px 8px;font-size:10px}
+  .meter .notice{margin-top:4px}
+}
+@media(orientation:landscape) and (max-height:280px) and (max-width:1000px){
+  .meter{padding:6px 10px}.provider h2{font-size:13px}.provider-mark{font-size:15px}
+  .big,.desk .big{font-size:20vh}.compact .big,.desk .compact .big{font-size:13vh}
+  .meter-meta,.compact .meter-meta{display:none}
+  .segments,.compact .segments{margin:3px 0;height:6px;min-height:6px}
+  .reset-line,.compact .reset-line{padding-top:3px;margin-top:3px}
+  .window,.compact .window{min-height:0;padding-top:3px}
+}
+/* No Grid or flex-gap is needed on the dedicated landscape display. */
+@media(orientation:landscape) and (max-height:500px) and (max-width:1000px){
+  main,.desk main{display:flex;flex-direction:column;gap:0}
+  header,.desk header{flex:0 0 24px;margin-bottom:5px}
+  .status-line{flex:0 0 22px;margin-bottom:5px}
+  #buckets{display:flex;flex-direction:row;flex:1 1 0%;gap:0;min-height:0}
+  #buckets>.meter{flex:1.1 1 0%;width:0}
+  #buckets>.meter+.meter{flex:1 1 0%;margin-left:8px}
+  .windows,.compact .windows{display:flex;flex-direction:row;gap:0;flex:1 1 0%}
+  .window,.compact .window{flex:1 1 0%;width:0;min-height:0}
+  .window+.window,.compact .window+.window{margin-left:8px}
+  .bottom-grid{display:flex;flex:0 0 30px;gap:0;margin-top:5px}
+  .extras{flex:1.1 1 0%;min-width:0}
+  .claude{flex:1 1 0%;min-width:0;margin-left:8px}
+  .has-notice #notice{flex:0 0 auto;margin-bottom:5px}
+  .has-notice #buckets{flex:1 0 160px}
+}
+@supports not (display:grid){
+  @media(orientation:portrait){
+    #buckets,.windows,.bottom-grid{display:block}
+    #buckets>.meter+.meter,.bottom-grid>.claude{margin-top:16px}
+    .compact .windows,.extras{display:flex}
+    .compact .window,.extras>div{flex:1 1 0%;min-width:0}
+    .compact .window+.window,.extras>div+div{margin-left:16px}
+    .clock{display:block}
+    .clock>span{display:block}
+    .brand-icon{margin-right:10px}
+    .reading>.available{margin-left:12px}
+    .provider-mark,.claude-mark{margin-right:8px}
+  }
+}
+/* Safari 10 can collapse the height of nested flex children. Each reading now
+   has an explicit area inside its card, based on the visible screen height. */
+@media(orientation:landscape) and (max-height:500px) and (max-width:1000px){
+  #buckets>.meter{display:block;position:relative;overflow:hidden}
+  .meter>.provider{position:absolute;top:8px;left:12px;right:12px;height:20px}
+  .meter .windows,.compact .windows{position:absolute;top:35px;bottom:9px;left:12px;right:12px;display:block;width:auto;height:auto}
+  .window,.compact .window{position:absolute;top:0;bottom:0;left:0;right:0;width:auto;padding:0;margin:0;display:block}
+  .compact .window{right:auto;width:calc(50% - 5px)}
+  .compact .window+.window{left:calc(50% + 5px);right:0;width:auto;margin:0;padding-left:8px}
+  .window-title,.compact .window-title{position:absolute;left:0;top:0;line-height:12px;white-space:nowrap}
+  .compact .window+.window .window-title{left:8px}
+  .reading,.compact .reading{position:absolute;top:14px;bottom:34px;left:0;right:0;display:block;margin:0}
+  .compact .window+.window .reading{left:8px}
+  .big,.desk .big{position:absolute;top:50%;left:0;transform:translateY(-50%);font-size:var(--desk-number-size,40px);line-height:1;margin:0;letter-spacing:-2px;white-space:nowrap}
+  .compact .big,.desk .compact .big{font-size:var(--desk-small-number-size,28px);margin:0;top:40%;letter-spacing:-1px}
+  .big span{font-size:22px}.compact .big span{font-size:15px}
+  .available{position:absolute;right:0;bottom:2px;margin:0;font-size:10px}
+  .compact .available{left:0;right:auto;bottom:0;margin:0;font-size:8px}
+  .segments,.compact .segments{position:absolute;left:0;right:0;bottom:24px;height:6px;min-height:6px;margin:0}
+  .compact .window+.window .segments{left:8px}
+  .meter-meta,.compact .meter-meta{display:none}
+  .reset-line,.compact .reset-line{position:absolute;left:0;right:0;bottom:0;height:20px;margin:0;padding-top:5px;line-height:12px}
+  .compact .window+.window .reset-line{left:8px}
+  .meter>.notice{position:absolute;top:28px;left:8px;right:8px;z-index:2}
+  .claude-meter .tag{display:block;font-size:8px;padding:3px 5px}
+  .provider-note{position:absolute;left:12px;right:12px;bottom:7px;margin:0;font-size:9px;background:#19283e;z-index:2}
+  .provider-stale .reset-line{visibility:hidden}
+  #spark-summary{font-size:9px;white-space:nowrap}
+}
