@@ -95,22 +95,22 @@ header .clock{margin-left:auto;margin-right:14px}
   .meter>.provider{position:absolute;top:8px;left:12px;right:12px;height:20px}
   .meter .windows,.compact .windows{position:absolute;top:35px;bottom:9px;left:12px;right:12px;display:block;width:auto;height:auto}
   .window,.compact .window{position:absolute;top:0;bottom:0;left:0;right:0;width:auto;padding:0;margin:0;display:block}
-  .compact .window{right:auto;width:calc(50% - 5px)}
-  .compact .window+.window{left:calc(50% + 5px);right:0;width:auto;margin:0;padding-left:8px}
+  .window:not(:only-child){right:auto;width:calc(50% - 5px)}
+  .window+.window{left:calc(50% + 5px);right:0;width:auto;margin:0;padding-left:8px}
   .window-title,.compact .window-title{position:absolute;left:0;top:0;line-height:12px;white-space:nowrap}
-  .compact .window+.window .window-title{left:8px}
+  .window+.window .window-title{left:8px}
   .reading,.compact .reading{position:absolute;top:14px;bottom:34px;left:0;right:0;display:block;margin:0}
-  .compact .window+.window .reading{left:8px}
+  .window+.window .reading{left:8px}
   .big,.desk .big{position:absolute;top:50%;left:0;transform:translateY(-50%);font-size:var(--desk-number-size,40px);line-height:1;margin:0;letter-spacing:-2px;white-space:nowrap}
   .compact .big,.desk .compact .big{font-size:var(--desk-small-number-size,28px);margin:0;top:40%;letter-spacing:-1px}
   .big span{font-size:22px}.compact .big span{font-size:15px}
   .available{position:absolute;right:0;bottom:2px;margin:0;font-size:10px}
   .compact .available{left:0;right:auto;bottom:0;margin:0;font-size:8px}
   .segments,.compact .segments{position:absolute;left:0;right:0;bottom:24px;height:6px;min-height:6px;margin:0}
-  .compact .window+.window .segments{left:8px}
+  .window+.window .segments{left:8px}
   .meter-meta,.compact .meter-meta{display:none}
   .reset-line,.compact .reset-line{position:absolute;left:0;right:0;bottom:0;height:20px;margin:0;padding-top:5px;line-height:12px}
-  .compact .window+.window .reset-line{left:8px}
+  .window+.window .reset-line{left:8px}
   .meter>.notice{position:absolute;top:28px;left:8px;right:8px;z-index:2}
   .claude-meter .tag{display:block;font-size:8px;padding:3px 5px}
   .provider-note{position:absolute;left:12px;right:12px;bottom:7px;margin:0;font-size:9px;background:#19283e;z-index:2}

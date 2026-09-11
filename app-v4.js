@@ -106,7 +106,7 @@
       for (var j = 0; j < bucket.windows.length && (!isExtra || j < extra.provider.maxWindows); j++) {
         var w = bucket.windows[j], section = el('div', 'window'), reading = el('div', 'reading');
         add(section, el('span', 'window-title', windowName(w)));
-        var big = el('div', 'big', w.remaining == null ? '—' : String(w.remaining));
+        var big = el('div', 'big', w.remaining == null ? '—' : String(Math.round(w.remaining)));
         add(big, el('span', '', '%')); add(reading, big, el('span', 'available', 'disponível')); add(section, reading);
         var bar = el('div', 'segments'); bar.setAttribute('role', 'meter'); bar.setAttribute('aria-label', windowName(w) + ' disponível'); bar.setAttribute('aria-valuemin', '0'); bar.setAttribute('aria-valuemax', '100');
         if (w.remaining != null) bar.setAttribute('aria-valuenow', w.remaining);
@@ -170,7 +170,10 @@
       if (window.innerWidth > height && height <= 500 && window.innerWidth <= 1000) {
         var compact = windows[i].parentNode.parentNode.className.indexOf('compact') !== -1;
         var available = reading.getBoundingClientRect().height;
-        number.style.fontSize = Math.max(16, Math.min(compact ? 56 : 88, available - (compact ? 12 : 4))) + 'px';
+        // O número também não pode estourar a largura da janela: com várias contas, cada cartão fica estreito.
+        var digits = Math.max(1, (number.firstChild && String(number.firstChild.nodeValue || '').length) || 1);
+        var byWidth = (windows[i].getBoundingClientRect().width - (compact ? 16 : 24)) / digits / 0.62;
+        number.style.fontSize = Math.max(16, Math.min(compact ? 56 : 88, available - (compact ? 12 : 4), byWidth)) + 'px';
       } else { number.style.fontSize = ''; }
     }
   }
