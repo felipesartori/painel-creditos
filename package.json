@@ -1,1 +1,1 @@
-{"name":"andreus-painel-creditos","version":"1.0.0","private":true,"scripts":{"start":"node server.cjs","test":"node --test test.cjs browser-compat.test.cjs claude-usage.test.cjs"}}
+{"name":"andreus-painel-creditos","version":"1.0.0","private":true,"scripts":{"start":"node server.cjs","test":"node --test test.cjs browser-compat.test.cjs claude-usage.test.cjs cursor-usage.test.cjs codex-accounts.test.cjs"}}

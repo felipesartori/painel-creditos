@@ -65,32 +65,45 @@
     return (d ? d + 'd ' : '') + h + 'h ' + m + 'min';
   }
   function windowName(w) { return w.label || (w.minutes === 10080 ? 'Limite semanal' : w.minutes === 300 ? 'Janela de 5 horas' : w.minutes ? 'Janela de ' + w.minutes + ' minutos' : 'Limite da conta'); }
-  function render(data, claude) {
+  // Provedores HTTP extras (Claude, Cursor): mesmo formato de bucket, cada um com seu estado de leitura.
+  var PROVIDERS = [
+    {key:'claude', mark:'✳', fallback:{id:'claude',name:'Claude',windows:[{minutes:300,remaining:null,used:null},{minutes:10080,remaining:null,used:null}]}, loading:'Consultando limites Claude…', maxWindows:2},
+    {key:'cursor', mark:'▸', optional:true, fallback:{id:'cursor',name:'Cursor',windows:[{label:'Ciclo mensal',remaining:null,used:null}]}, loading:'Consultando limites Cursor…', maxWindows:2}
+  ];
+  function render(data, states) {
     var host = $('buckets'), credits = null;
     var displayBuckets = [], spark = null;
     for (var d = 0; d < data.buckets.length; d++) {
       if (data.buckets[d].id === 'codex_bengalfox') spark = data.buckets[d];
       else displayBuckets.push(data.buckets[d]);
     }
-    var claudeBucket = claude && claude.data;
-    var claudeStale = !claude || !claude.updatedAt || !!claude.error || Date.now() - claude.updatedAt > 300000;
-    displayBuckets.push(claudeBucket || {id:'claude',name:'Claude',windows:[{minutes:300,remaining:null,used:null},{minutes:10080,remaining:null,used:null}]});
+    var extras = {};
+    for (var p = 0; p < PROVIDERS.length; p++) {
+      var provider = PROVIDERS[p], pState = states && states[provider.key];
+      if (provider.optional && !pState) continue;
+      var stale = !pState || !pState.updatedAt || !!pState.error || Date.now() - pState.updatedAt > 300000;
+      var bucket = (pState && pState.data) || provider.fallback;
+      extras[bucket.id] = {provider:provider, state:pState, stale:stale};
+      displayBuckets.push(bucket);
+    }
     var sparkText = [];
     if(spark) for(var s=0;s<spark.windows.length;s++) sparkText.push((spark.windows[s].minutes===300?'5h: ':'Semana: ')+(spark.windows[s].remaining==null?'—':spark.windows[s].remaining+'%'));
     if($('spark-summary')) $('spark-summary').textContent = sparkText.length?sparkText.join(' · '):'Limites indisponíveis';
     while (host.firstChild) host.removeChild(host.firstChild);
     if (!data.buckets.length) add(host, el('p', 'notice', 'Limites Codex indisponíveis nesta leitura.'));
     for (var b = 0; b < displayBuckets.length; b++) {
-      var bucket = displayBuckets[b], isClaude=bucket.id==='claude';
-      var card = el('article', 'meter' + (bucket.id === 'codex' ? '' : ' compact') + (isClaude?' claude-meter':'') + (isClaude&&claudeStale?' provider-stale':''));
+      var bucket = displayBuckets[b], extra = extras[bucket.id] || null, isExtra = Boolean(extra);
+      var extraStale = isExtra && extra.stale;
+      var card = el('article', 'meter' + (bucket.id === 'codex' ? '' : ' compact') + (isExtra?' claude-meter':'') + (extraStale?' provider-stale':''));
       if (bucket.id === 'codex') credits = bucket.credits;
       var head = el('div', 'provider');
-      add(head, el('span', 'provider-mark', isClaude?'✳':'⌘'), el('h2', '', bucket.name), el('span', 'tag', isClaude?(claudeStale?'Aguardando':time(claude.updatedAt)):bucket.plan ? 'Plano ' + bucket.plan : 'Codex')); add(card, head);
-      if(isClaude&&claudeStale){var note=el('p','provider-note',claude&&claude.error?claude.error:'Consultando limites Claude…');add(card,note);}
+      var tag = isExtra ? (extraStale ? 'Aguardando' : time(extra.state.updatedAt)) : bucket.plan ? 'Plano ' + bucket.plan : 'Codex';
+      add(head, el('span', 'provider-mark', isExtra?extra.provider.mark:'⌘'), el('h2', '', bucket.name), el('span', 'tag', tag)); add(card, head);
+      if(extraStale){var note=el('p','provider-note',(extra.state&&extra.state.error)||extra.provider.loading);add(card,note);}
       if (bucket.blocked) add(card, el('p', 'notice', 'Limite atingido. Confira a conta no Codex.'));
       var windows = el('div', 'windows');
       if (!bucket.windows.length) add(windows, el('p', 'muted', 'Limites indisponíveis.'));
-      for (var j = 0; j < bucket.windows.length && (!isClaude || j < 2); j++) {
+      for (var j = 0; j < bucket.windows.length && (!isExtra || j < extra.provider.maxWindows); j++) {
         var w = bucket.windows[j], section = el('div', 'window'), reading = el('div', 'reading');
         add(section, el('span', 'window-title', windowName(w)));
         var big = el('div', 'big', w.remaining == null ? '—' : String(w.remaining));
@@ -124,7 +137,6 @@
     $('notice').textContent = notice; $('notice').hidden = !notice; toggle(document.body, 'has-notice', Boolean(notice));
     var claude = snapshot && snapshot.claude;
     if(claude&&$('wake-status')) $('wake-status').textContent = claude.error || (claude.updatedAt?'Claude atualizado às '+time(claude.updatedAt):'Consultando Claude…');
-    if(claude&&claude.updatedAt&&Date.now()-claude.updatedAt>300000){var cards=document.querySelectorAll('.claude-meter');for(var c=0;c<cards.length;c++)toggle(cards[c],'provider-stale',true);}
   }
   function refresh() {
     if (inFlight) return;
@@ -138,8 +150,8 @@
           if (request.status === 401) { token = ''; try { sessionStorage.removeItem('reserva-token'); } catch (ignore) {} throw new Error('access'); }
           if (request.status !== 200) throw new Error('network');
           snapshot = JSON.parse(request.responseText); networkError = false;
-          var signature = JSON.stringify([snapshot.data,snapshot.claude]);
-          if (signature !== lastRender) { render(snapshot.data || {buckets:[],resets:null},snapshot.claude); lastRender = signature; }
+          var signature = JSON.stringify([snapshot.data,snapshot.claude,snapshot.cursor]);
+          if (signature !== lastRender) { render(snapshot.data || {buckets:[],resets:null},snapshot); lastRender = signature; }
         } catch (error) { networkError = true; }
         finish();
       };

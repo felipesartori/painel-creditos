@@ -5,6 +5,7 @@ const os = require('node:os');
 const crypto = require('node:crypto');
 const { spawn } = require('node:child_process');
 const {readClaude}=require('./claude-usage.cjs');
+const {readCursor}=require('./cursor-usage.cjs');
 const ROOT = __dirname;
 const defaultClientName = process.env.CODEX_CLIENT_NAME || `codex_usage_monitor_${(process.env.USERNAME || process.env.USER || 'user').replace(/[^a-zA-Z0-9_-]/g, '_')}`;
 
@@ -127,13 +128,18 @@ function start() {
   if(!fs.existsSync(pairingFile))fs.writeFileSync(pairingFile,pairingCode,{mode:0o600});
   const attempts=new Map();
   let state={updatedAt:null,data:null,error:null},busy=false;
-  let claudeState={updatedAt:null,data:null,error:null},claudeBusy=false,claudeNextAttempt=0;
-  async function pollClaude(){
-    if(claudeBusy||Date.now()<claudeNextAttempt)return;claudeBusy=true;
-    try{const data=await readClaude();claudeState={updatedAt:Date.now(),data,error:null};claudeNextAttempt=Date.now()+120000;}
-    catch(error){claudeState={...claudeState,error:error.message==='fetch failed'?'Sem conexão com o Claude. Tentando novamente em alguns minutos.':error.message};claudeNextAttempt=Date.now()+(error.retryAfterSeconds||120)*1000;}
-    finally{claudeBusy=false;}
+  // Provedores consultados por HTTP, cada um com sua própria janela de espera após erro.
+  const providers=[
+    {key:'claude',read:readClaude,offline:'Sem conexão com o Claude. Tentando novamente em alguns minutos.'},
+    {key:'cursor',read:readCursor,offline:'Sem conexão com o Cursor. Tentando novamente em alguns minutos.',optional:true}
+  ].map(p=>({...p,state:{updatedAt:null,data:null,error:null},busy:false,nextAttempt:0}));
+  async function pollProvider(provider){
+    if(provider.busy||Date.now()<provider.nextAttempt)return;provider.busy=true;
+    try{const data=await provider.read();provider.state={updatedAt:Date.now(),data,error:null};provider.nextAttempt=Date.now()+120000;}
+    catch(error){provider.missing=Boolean(error.missingCredentials);provider.state={...provider.state,error:error.message==='fetch failed'?provider.offline:error.message};provider.nextAttempt=Date.now()+(error.retryAfterSeconds||120)*1000;}
+    finally{provider.busy=false;}
   }
+  function pollClaude(){return Promise.all(providers.map(pollProvider));}
   async function poll(){if(busy)return;busy=true;try{state={updatedAt:Date.now(),data:await readAllAccounts(),error:null};}catch(e){state={...state,error:e.message};}finally{busy=false;}}
   const files={'/':['index.html','text/html; charset=utf-8'],'/boot.js':['boot.js','text/javascript; charset=utf-8'],'/app-v4.js':['app-v4.js','text/javascript; charset=utf-8'],'/app.js':['app-v4.js','text/javascript; charset=utf-8'],'/style.css':['style.css','text/css; charset=utf-8'],'/landscape.css':['landscape.css','text/css; charset=utf-8']};
   const server=http.createServer((req,res)=>{
@@ -158,7 +164,10 @@ function start() {
     if(url.pathname==='/api/usage'){
       const supplied=Buffer.from(req.headers.authorization||'');const expected=Buffer.from('Bearer '+token);
       if(supplied.length!==expected.length||!crypto.timingSafeEqual(supplied,expected)){res.writeHead(401);res.end();return;}
-      res.writeHead(200,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify({...state,pollEverySeconds:60,claude:{...claudeState,pollEverySeconds:120}}));return;
+      res.writeHead(200,{'Content-Type':'application/json; charset=utf-8'});const extra={};
+      // Provedor opcional sem credencial no computador fica fora do painel, em vez de virar um cartão em erro.
+      for(const provider of providers)if(!(provider.optional&&provider.missing&&!provider.state.data))extra[provider.key]={...provider.state,pollEverySeconds:120};
+      res.end(JSON.stringify({...state,pollEverySeconds:60,...extra}));return;
     }
     const accessPath=/^\/painel\/([a-f0-9]{48})\/?$/.exec(url.pathname);
     if(accessPath && !crypto.timingSafeEqual(Buffer.from(accessPath[1]),Buffer.from(token))){accessPage(401);return;}
