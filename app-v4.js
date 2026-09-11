@@ -89,7 +89,9 @@
     var total = w.minutes * 60, passed = total - (w.resetsAt - Date.now() / 1000);
     return Math.max(0, Math.min(100, passed / total * 100));
   }
-  function barColor(remaining) { return remaining == null ? '#8ea3c4' : remaining <= 10 ? '#ff9a9d' : remaining <= 25 ? '#f8cd7e' : '#82d8c9'; }
+  // Faixas de alerta pelo que resta: âmbar a partir de 40% e vermelho a partir de 15%.
+  function barColor(remaining) { return remaining == null ? '#8ea3c4' : remaining <= 15 ? '#ff9a9d' : remaining <= 40 ? '#f8cd7e' : '#82d8c9'; }
+  function numberColor(remaining) { return remaining == null || remaining > 40 ? '' : remaining <= 15 ? '#ff9a9d' : '#f8cd7e'; }
   function windowName(w) { return w.label || (w.minutes === 10080 ? 'Limite semanal' : w.minutes === 300 ? 'Janela de 5 horas' : w.minutes ? 'Janela de ' + w.minutes + ' minutos' : 'Limite da conta'); }
   // Provedores HTTP extras (Claude, Cursor): mesmo formato de bucket, cada um com seu estado de leitura.
   var PROVIDERS = [
@@ -147,6 +149,7 @@
         var showUsed = isExtra && extra.provider.metric === 'used';
         var value = showUsed ? w.used : w.remaining, label = showUsed ? 'utilizado' : 'disponível';
         var big = el('div', 'big', value == null ? '—' : String(Math.round(value)));
+        big.style.color = numberColor(w.remaining);
         add(big, el('span', '', '%')); add(reading, big, el('span', 'available', label)); add(section, reading);
         var bar = el('div', 'segments'); bar.setAttribute('role', 'meter'); bar.setAttribute('aria-label', windowName(w) + ' ' + label); bar.setAttribute('aria-valuemin', '0'); bar.setAttribute('aria-valuemax', '100');
         if (value != null) bar.setAttribute('aria-valuenow', value);

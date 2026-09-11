@@ -50,7 +50,7 @@ Cursor: consulta de leitura a `https://cursor.com/api/usage-summary` a cada cinc
 
 Cada cartão tem um `×` que o oculta até o horário de renovação daquela conta, e depois disso ele volta sozinho. A escolha fica salva no próprio aparelho, então cada celular ou computador vê o que quiser; o botão "Mostrar todas" traz de volta antes da renovação.
 
-No Codex e no Cursor o número grande é o saldo que resta, caindo até 0. No Claude é o consumo, subindo até 100%, para bater com o que o `claude` mostra no terminal; nos dois casos a outra leitura aparece na linha de baixo. Nas barras, a cor indica a faixa do que resta (verde, âmbar abaixo de 25% e vermelho abaixo de 10%) e o traço vertical marca o andamento do período: barra à frente do traço significa folga em relação ao reset, atrás dele significa gasto adiantado.
+No Codex e no Cursor o número grande é o saldo que resta, caindo até 0. No Claude é o consumo, subindo até 100%, para bater com o que o `claude` mostra no terminal; nos dois casos a outra leitura aparece na linha de baixo. A cor do número e da barra indica a faixa do que resta: verde acima de 40%, âmbar a partir de 40% e vermelho a partir de 15% e o traço vertical marca o andamento do período: barra à frente do traço significa folga em relação ao reset, atrás dele significa gasto adiantado.
 
 Os ícones de cada serviço estão em `icons/`, vindos do projeto Simple Icons (repositório em CC0), e são servidos pelo próprio painel.
 

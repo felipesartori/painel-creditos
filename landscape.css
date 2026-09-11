@@ -99,14 +99,14 @@ header .clock{margin-left:auto;margin-right:14px}
   .window+.window{left:calc(50% + 5px);right:0;width:auto;margin:0;padding-left:8px}
   .window-title,.compact .window-title{position:absolute;left:0;top:0;line-height:12px;white-space:nowrap}
   .window+.window .window-title{left:8px}
-  .reading,.compact .reading{position:absolute;top:14px;bottom:34px;left:0;right:0;display:block;margin:0}
+  .reading,.compact .reading{position:absolute;top:14px;bottom:40px;left:0;right:0;display:block;margin:0}
   .window+.window .reading{left:8px}
   .big,.desk .big{position:absolute;top:50%;left:0;transform:translateY(-50%);font-size:var(--desk-number-size,40px);line-height:1;margin:0;letter-spacing:-2px;white-space:nowrap}
   .compact .big,.desk .compact .big{font-size:var(--desk-small-number-size,28px);margin:0;top:40%;letter-spacing:-1px}
   .big span{font-size:22px}.compact .big span{font-size:15px}
-  .available{position:absolute;right:0;bottom:2px;margin:0;font-size:10px}
+  .available{position:absolute;right:0;bottom:2px;margin:0;font-size:9px}
   .compact .available{left:0;right:auto;bottom:0;margin:0;font-size:8px}
-  .segments,.compact .segments{position:absolute;left:0;right:0;bottom:24px;height:8px;min-height:8px;margin:0}
+  .segments,.compact .segments{position:absolute;left:0;right:0;bottom:28px;height:8px;min-height:8px;margin:0}
   .elapsed-mark{top:-3px;bottom:-3px}.elapsed-mark:after{display:none}
   .hide-card{width:22px;min-height:22px;font-size:14px;margin-left:4px;position:absolute;right:0;top:-1px}
   .meter>.provider{padding-right:26px}
@@ -115,9 +115,9 @@ header .clock{margin-left:auto;margin-right:14px}
   .hidden-note{display:none}
   .window+.window .segments{left:8px}
   .meter-meta,.compact .meter-meta{display:none}
-  .reset-line,.compact .reset-line{position:absolute;left:0;right:0;bottom:0;height:20px;margin:0;padding-top:5px;line-height:12px;display:block}
+  .reset-line,.compact .reset-line{position:absolute;left:0;right:0;bottom:0;height:24px;margin:0;padding-top:4px;line-height:18px;display:block}
   .reset-line>span,.compact .reset-line>span{display:none}
-  .reset-line strong,.compact .reset-line strong{white-space:nowrap;font-size:10px}
+  .reset-line strong,.compact .reset-line strong{white-space:nowrap;font-size:15px;color:var(--text)}
   .window+.window .reset-line{left:8px}
   .meter>.notice{position:absolute;top:28px;left:8px;right:8px;z-index:2}
   .claude-meter .tag{display:block;font-size:8px;padding:3px 5px}

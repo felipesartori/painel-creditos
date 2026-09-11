@@ -2,7 +2,7 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const fs=require('node:fs');
-function runClient(status=200,location={hash:'#test-token',pathname:'/'},extra={},ocultas=null){
+function runClient(status=200,location={hash:'#test-token',pathname:'/'},extra={},ocultas=null,janelas=null){
   function Element(){this.children=[];this.style={setProperty(){}};this.dataset={};this.className='';this.textContent='';this.hidden=false;this.classList={toggle(){},contains(){return false;},add(){},remove(){}};}
   Element.prototype.appendChild=function(e){this.children.push(e);return e;};
   Element.prototype.removeChild=function(e){this.children.splice(this.children.indexOf(e),1);};
@@ -13,7 +13,7 @@ function runClient(status=200,location={hash:'#test-token',pathname:'/'},extra={
   get('status').textContent='Conectando ao computador…';
   const document={getElementById:get,createElement:()=>new Element(),querySelector:()=>get('header'),querySelectorAll:()=>[],body:new Element(),documentElement:new Element(),addEventListener(){},hidden:false};
   let requested=0;
-  function XHR(){this.open=function(){};this.setRequestHeader=function(){};this.send=function(){requested++;this.status=status;this.responseText=JSON.stringify({updatedAt:Date.now(),data:{buckets:[{id:'codex',name:'Codex',plan:'pro',windows:[{remaining:52,used:48,minutes:10080,resetsAt:1800000000}],credits:{balance:'0'}}],resets:2},error:null,...extra});this.onload();};}
+  function XHR(){this.open=function(){};this.setRequestHeader=function(){};this.send=function(){requested++;this.status=status;this.responseText=JSON.stringify({updatedAt:Date.now(),data:{buckets:[{id:'codex',name:'Codex',plan:'pro',windows:janelas||[{remaining:52,used:48,minutes:10080,resetsAt:1800000000}],credits:{balance:'0'}}],resets:2},error:null,...extra});this.onload();};}
   const window={innerHeight:320,addEventListener(){},scrollTo(){},matchMedia:()=>({matches:true}),setTimeout(){}};
   const context={document,window,navigator:{},location,history:{replaceState(){}},sessionStorage:{getItem(){return null;},setItem(){},removeItem(){}},localStorage:{getItem(){return ocultas?JSON.stringify(ocultas):null;},setItem(){},removeItem(){}},XMLHttpRequest:XHR,MutationObserver:function(){this.observe=function(){};},setInterval(){},setTimeout(){},clearTimeout(){},console};
   window.document=document;window.location=context.location;
@@ -66,4 +66,11 @@ test('Codex mostra o saldo e o Claude mostra o consumo',()=>{
   const numeros=[];
   (function anda(node){ if(node.className==='big') numeros.push(node.textContent); (node.children||[]).forEach(anda); }(r.nodes.buckets));
   assert.deepEqual(numeros,['52','23']);// Codex: 52% disponível; Claude: 23% utilizado
+});
+
+test('a cor do numero segue as faixas de alerta do que resta',()=>{
+  const cores=r=>{const out=[];(function anda(n){ if(n.className==='big') out.push(n.style.color||''); (n.children||[]).forEach(anda); }(r.nodes.buckets));return out;};
+  const janelas=[{remaining:52,used:48,minutes:300,resetsAt:1800000000},{remaining:30,used:70,minutes:300,resetsAt:1800000000},{remaining:9,used:91,minutes:300,resetsAt:1800000000}];
+  const r=runClient(200,{hash:'#test-token',pathname:'/'},{},null,janelas);
+  assert.deepEqual(cores(r).slice(0,3),['','#f8cd7e','#ff9a9d']);
 });
