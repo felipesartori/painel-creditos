@@ -93,7 +93,7 @@
   function windowName(w) { return w.label || (w.minutes === 10080 ? 'Limite semanal' : w.minutes === 300 ? 'Janela de 5 horas' : w.minutes ? 'Janela de ' + w.minutes + ' minutos' : 'Limite da conta'); }
   // Provedores HTTP extras (Claude, Cursor): mesmo formato de bucket, cada um com seu estado de leitura.
   var PROVIDERS = [
-    {key:'claude', mark:'✳', fallback:{id:'claude',name:'Claude',windows:[{minutes:300,remaining:null,used:null},{minutes:10080,remaining:null,used:null}]}, loading:'Consultando limites Claude…', maxWindows:2},
+    {key:'claude', mark:'✳', metric:'used', fallback:{id:'claude',name:'Claude',windows:[{minutes:300,remaining:null,used:null},{minutes:10080,remaining:null,used:null}]}, loading:'Consultando limites Claude…', maxWindows:2},
     {key:'cursor', mark:'▸', optional:true, fallback:{id:'cursor',name:'Cursor',windows:[{label:'Ciclo mensal',remaining:null,used:null}]}, loading:'Consultando limites Cursor…', maxWindows:2}
   ];
   function render(data, states) {
@@ -113,7 +113,7 @@
       displayBuckets.push(bucket);
     }
     var sparkText = [];
-    if(spark) for(var s=0;s<spark.windows.length;s++) sparkText.push((spark.windows[s].minutes===300?'5h: ':'Semana: ')+(spark.windows[s].used==null?'—':Math.round(spark.windows[s].used)+'% usado'));
+    if(spark) for(var s=0;s<spark.windows.length;s++) sparkText.push((spark.windows[s].minutes===300?'5h: ':'Semana: ')+(spark.windows[s].remaining==null?'—':Math.round(spark.windows[s].remaining)+'%'));
     if($('spark-summary')) $('spark-summary').textContent = sparkText.length?sparkText.join(' · '):'Limites indisponíveis';
     dropExpired();
     var visibleBuckets = [];
@@ -140,22 +140,28 @@
       for (var j = 0; j < bucket.windows.length && (!isExtra || j < extra.provider.maxWindows); j++) {
         var w = bucket.windows[j], section = el('div', 'window'), reading = el('div', 'reading');
         add(section, el('span', 'window-title', windowName(w)));
-        var big = el('div', 'big', w.used == null ? '—' : String(Math.round(w.used)));
-        add(big, el('span', '', '%')); add(reading, big, el('span', 'available', 'utilizado')); add(section, reading);
-        var bar = el('div', 'segments'); bar.setAttribute('role', 'meter'); bar.setAttribute('aria-label', windowName(w) + ' utilizado'); bar.setAttribute('aria-valuemin', '0'); bar.setAttribute('aria-valuemax', '100');
-        if (w.used != null) bar.setAttribute('aria-valuenow', w.used);
+        // O Claude é lido como consumo, igual ao claude no terminal; os demais, como saldo restante.
+        var showUsed = isExtra && extra.provider.metric === 'used';
+        var value = showUsed ? w.used : w.remaining, label = showUsed ? 'utilizado' : 'disponível';
+        var big = el('div', 'big', value == null ? '—' : String(Math.round(value)));
+        add(big, el('span', '', '%')); add(reading, big, el('span', 'available', label)); add(section, reading);
+        var bar = el('div', 'segments'); bar.setAttribute('role', 'meter'); bar.setAttribute('aria-label', windowName(w) + ' ' + label); bar.setAttribute('aria-valuemin', '0'); bar.setAttribute('aria-valuemax', '100');
+        if (value != null) bar.setAttribute('aria-valuenow', value);
         var color = barColor(w.remaining);
         for (var k = 0; k < 25; k++) {
           var segment = el('span', 'segment'), fill = el('i');
-          fill.style.width = Math.max(0, Math.min(100, ((w.used || 0) - k * 4) * 25)) + '%';
+          fill.style.width = Math.max(0, Math.min(100, ((value || 0) - k * 4) * 25)) + '%';
           fill.style.background = color;
           add(segment, fill); add(bar, segment);
         }
         // Marca de quanto do período já passou: à esquerda do consumo significa gasto adiantado.
         var elapsed = elapsedPercent(w);
-        if (elapsed != null) { var mark = el('span', 'elapsed-mark'); mark.style.left = elapsed + '%'; mark.title = Math.round(elapsed) + '% do tempo decorrido'; add(bar, mark); }
+        // A marca acompanha a mesma leitura da barra: tempo decorrido para consumo, tempo restante para saldo.
+        if (elapsed != null) { var mark = el('span', 'elapsed-mark'); mark.style.left = (showUsed ? elapsed : 100 - elapsed) + '%'; mark.title = Math.round(elapsed) + '% do tempo decorrido'; add(bar, mark); }
         add(section, bar);
-        var usedText = w.remaining == null ? 'Saldo indisponível' : Math.round(w.remaining) + '% disponível';
+        var usedText = showUsed
+          ? (w.remaining == null ? 'Saldo indisponível' : Math.round(w.remaining) + '% disponível')
+          : (w.used == null ? 'Uso indisponível' : Math.round(w.used) + '% utilizado');
         if (elapsed != null) usedText += ' · ' + Math.round(elapsed) + '% do tempo';
         var meta = el('div', 'meter-meta'); add(meta, el('span', '', usedText), el('span', '', w.resetsAt ? 'Renova ' + dateTime(w.resetsAt) : 'Renovação indisponível')); add(section, meta);
         var reset = el('div', 'reset-line'), count = el('strong', '', countdown(w.resetsAt));

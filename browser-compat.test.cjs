@@ -59,9 +59,11 @@ test('conta oculta some até o horário de renovação e volta depois dele',()=>
   assert.equal(avisos(devolta),0);
 });
 
-test('o numero grande mostra o quanto ja foi utilizado',()=>{
-  const r=runClient();
-  const textos=[];
-  (function anda(node){ if(node.className==='big') textos.push(node.textContent); (node.children||[]).forEach(anda); }(r.nodes.buckets));
-  assert.ok(textos.indexOf('48')>=0,'esperava 48% utilizado, veio '+JSON.stringify(textos));
+test('Codex mostra o saldo e o Claude mostra o consumo',()=>{
+  const r=runClient(200,{hash:'#test-token',pathname:'/'},{
+    claude:{updatedAt:Date.now(),error:null,data:{id:'claude',name:'Claude',plan:'team',windows:[{label:'Janela de 5 horas',used:23,remaining:77,minutes:300,resetsAt:1800000000}]}}
+  });
+  const numeros=[];
+  (function anda(node){ if(node.className==='big') numeros.push(node.textContent); (node.children||[]).forEach(anda); }(r.nodes.buckets));
+  assert.deepEqual(numeros,['52','23']);// Codex: 52% disponível; Claude: 23% utilizado
 });
