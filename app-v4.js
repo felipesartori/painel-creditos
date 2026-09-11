@@ -113,7 +113,7 @@
       displayBuckets.push(bucket);
     }
     var sparkText = [];
-    if(spark) for(var s=0;s<spark.windows.length;s++) sparkText.push((spark.windows[s].minutes===300?'5h: ':'Semana: ')+(spark.windows[s].remaining==null?'—':spark.windows[s].remaining+'%'));
+    if(spark) for(var s=0;s<spark.windows.length;s++) sparkText.push((spark.windows[s].minutes===300?'5h: ':'Semana: ')+(spark.windows[s].used==null?'—':Math.round(spark.windows[s].used)+'% usado'));
     if($('spark-summary')) $('spark-summary').textContent = sparkText.length?sparkText.join(' · '):'Limites indisponíveis';
     dropExpired();
     var visibleBuckets = [];
@@ -140,14 +140,14 @@
       for (var j = 0; j < bucket.windows.length && (!isExtra || j < extra.provider.maxWindows); j++) {
         var w = bucket.windows[j], section = el('div', 'window'), reading = el('div', 'reading');
         add(section, el('span', 'window-title', windowName(w)));
-        var big = el('div', 'big', w.remaining == null ? '—' : String(Math.round(w.remaining)));
-        add(big, el('span', '', '%')); add(reading, big, el('span', 'available', 'disponível')); add(section, reading);
-        var bar = el('div', 'segments'); bar.setAttribute('role', 'meter'); bar.setAttribute('aria-label', windowName(w) + ' disponível'); bar.setAttribute('aria-valuemin', '0'); bar.setAttribute('aria-valuemax', '100');
-        if (w.remaining != null) bar.setAttribute('aria-valuenow', w.remaining);
+        var big = el('div', 'big', w.used == null ? '—' : String(Math.round(w.used)));
+        add(big, el('span', '', '%')); add(reading, big, el('span', 'available', 'utilizado')); add(section, reading);
+        var bar = el('div', 'segments'); bar.setAttribute('role', 'meter'); bar.setAttribute('aria-label', windowName(w) + ' utilizado'); bar.setAttribute('aria-valuemin', '0'); bar.setAttribute('aria-valuemax', '100');
+        if (w.used != null) bar.setAttribute('aria-valuenow', w.used);
         var color = barColor(w.remaining);
         for (var k = 0; k < 25; k++) {
           var segment = el('span', 'segment'), fill = el('i');
-          fill.style.width = Math.max(0, Math.min(100, ((w.remaining || 0) - k * 4) * 25)) + '%';
+          fill.style.width = Math.max(0, Math.min(100, ((w.used || 0) - k * 4) * 25)) + '%';
           fill.style.background = color;
           add(segment, fill); add(bar, segment);
         }
@@ -155,7 +155,7 @@
         var elapsed = elapsedPercent(w);
         if (elapsed != null) { var mark = el('span', 'elapsed-mark'); mark.style.left = elapsed + '%'; mark.title = Math.round(elapsed) + '% do tempo decorrido'; add(bar, mark); }
         add(section, bar);
-        var usedText = w.used == null ? 'Uso indisponível' : Math.round(w.used) + '% utilizado';
+        var usedText = w.remaining == null ? 'Saldo indisponível' : Math.round(w.remaining) + '% disponível';
         if (elapsed != null) usedText += ' · ' + Math.round(elapsed) + '% do tempo';
         var meta = el('div', 'meter-meta'); add(meta, el('span', '', usedText), el('span', '', w.resetsAt ? 'Renova ' + dateTime(w.resetsAt) : 'Renovação indisponível')); add(section, meta);
         var reset = el('div', 'reset-line'), count = el('strong', '', countdown(w.resetsAt));

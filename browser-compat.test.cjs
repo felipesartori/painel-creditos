@@ -58,3 +58,10 @@ test('conta oculta some até o horário de renovação e volta depois dele',()=>
   assert.equal(cartoes(devolta),2);// Codex voltou sozinho
   assert.equal(avisos(devolta),0);
 });
+
+test('o numero grande mostra o quanto ja foi utilizado',()=>{
+  const r=runClient();
+  const textos=[];
+  (function anda(node){ if(node.className==='big') textos.push(node.textContent); (node.children||[]).forEach(anda); }(r.nodes.buckets));
+  assert.ok(textos.indexOf('48')>=0,'esperava 48% utilizado, veio '+JSON.stringify(textos));
+});

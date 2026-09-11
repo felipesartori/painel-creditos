@@ -108,11 +108,16 @@ header .clock{margin-left:auto;margin-right:14px}
   .compact .available{left:0;right:auto;bottom:0;margin:0;font-size:8px}
   .segments,.compact .segments{position:absolute;left:0;right:0;bottom:24px;height:8px;min-height:8px;margin:0}
   .elapsed-mark{top:-3px;bottom:-3px}.elapsed-mark:after{display:none}
-  .hide-card{width:22px;min-height:22px;font-size:14px;margin-left:4px}
+  .hide-card{width:22px;min-height:22px;font-size:14px;margin-left:4px;position:absolute;right:0;top:-1px}
+  .meter>.provider{padding-right:26px}
+  .meter>.provider .tag,.claude-meter .tag{display:none}
+  .provider h2{min-width:0}
   .hidden-note{display:none}
   .window+.window .segments{left:8px}
   .meter-meta,.compact .meter-meta{display:none}
-  .reset-line,.compact .reset-line{position:absolute;left:0;right:0;bottom:0;height:20px;margin:0;padding-top:5px;line-height:12px}
+  .reset-line,.compact .reset-line{position:absolute;left:0;right:0;bottom:0;height:20px;margin:0;padding-top:5px;line-height:12px;display:block}
+  .reset-line>span,.compact .reset-line>span{display:none}
+  .reset-line strong,.compact .reset-line strong{white-space:nowrap;font-size:10px}
   .window+.window .reset-line{left:8px}
   .meter>.notice{position:absolute;top:28px;left:8px;right:8px;z-index:2}
   .claude-meter .tag{display:block;font-size:8px;padding:3px 5px}
